@@ -11,7 +11,7 @@ interface StockDetailsProps {
   historicalData: { [key: string]: { [key: string]: string } };
 }
 
-const Details = ({ symbol, stockDetails, historicalData }: StockDetailsProps) => {
+const Details = ({ symbol, stockDetails }: StockDetailsProps) => {
   const [favourites, setFavourites] = useState<string[]>([]);
   const [priceHistory, setPriceHistory] = useState<{ date: string; close: number }[]>([]);
   const [loading, setLoading] = useState(false);
