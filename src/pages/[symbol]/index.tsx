@@ -29,6 +29,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   if (symbol) {
     const response = await alphaVantageAxiosGet(`/query?function=GLOBAL_QUOTE&symbol=${symbol}`);
+    //TODO: remove mocked quote here
     const data = response['Global Quote'] || {
       '01. symbol': 'IBM',
       '02. open': '216.8000',
@@ -41,6 +42,15 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
       '09. change': '-3.7200',
       '10. change percent': '-1.7034%'
     };
+
+    if (!data) {
+      return {
+        redirect: {
+          destination: '/',
+          permanent: false,
+        },
+      };
+    }
 
     const stockDetails = [
       { label: 'Open', value: data['02. open'] },
@@ -63,9 +73,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
   }
 
   return {
-    props: {
-      symbol: '',
-      stockDetails: []
+    redirect: {
+      destination: '/',
+      permanent: false,
     },
   };
 };
