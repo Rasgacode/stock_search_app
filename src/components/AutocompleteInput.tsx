@@ -10,6 +10,7 @@ const AutocompleteInput = () => {
   const [inputValue, setInputValue] = useState<string>('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cache = useRef<{ [key: string]: string[] }>({});
 
   const fetchSuggestions = async (value: string) => {
     if (!value) {
@@ -17,11 +18,17 @@ const AutocompleteInput = () => {
       return;
     }
 
+    if (cache.current[value]) {
+      setSuggestions(cache.current[value]);
+      return;
+    }
+
     try {
-      const response = await alphaVantageAxiosGet(`/query?function=SYMBOL_SEARCH&keywords=${value}`)
+      const response = await alphaVantageAxiosGet(`/query?function=SYMBOL_SEARCH&keywords=${value}`);
       const suggestionsToDisplay = response?.bestMatches?.map(
-        (match: StockMatch) => (`symbol: ${match['1. symbol']} - company: ${match['2. name']}`
-      ));
+        (match: StockMatch) => (`symbol: ${match['1. symbol']} - company: ${match['2. name']}`)
+      );
+      cache.current[value] = suggestionsToDisplay;
       setSuggestions(suggestionsToDisplay);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
@@ -45,9 +52,9 @@ const AutocompleteInput = () => {
     setInputValue(suggestion);
     setSuggestions([]);
   };
-
+  console.log(cache.current)
   return (
-    <div className="relative w-4/12">
+    <div className="relative w-10/12 md:w-4/12">
       <input
         type="text"
         value={inputValue}
