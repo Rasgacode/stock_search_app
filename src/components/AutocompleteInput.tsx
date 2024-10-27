@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { alphaVantageAxiosGet } from "@/lib/alphaVantageAxios";
+import { getCacheFromLocalStorage, saveCacheToLocalStorage } from "@/lib/localStorage";
 
 interface StockMatch {
   ['1. symbol']: string;
@@ -10,7 +11,6 @@ const AutocompleteInput = () => {
   const [inputValue, setInputValue] = useState<string>('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cache = useRef<{ [key: string]: string[] }>({});
 
   const fetchSuggestions = async (value: string) => {
     if (!value) {
@@ -18,9 +18,13 @@ const AutocompleteInput = () => {
       return;
     }
 
-    if (cache.current[value]) {
-      setSuggestions(cache.current[value]);
-      return;
+    const cachedSuggestions = getCacheFromLocalStorage('suggestionsCache') || [];
+    if (cachedSuggestions.length) {
+      const selectedSuggestions = cachedSuggestions.find((suggestion) => suggestion.key === value);
+      if (selectedSuggestions) {
+        setSuggestions(selectedSuggestions.suggestions);
+        return;
+      }
     }
 
     try {
@@ -28,7 +32,8 @@ const AutocompleteInput = () => {
       const suggestionsToDisplay = response?.bestMatches?.map(
         (match: StockMatch) => (`symbol: ${match['1. symbol']} - company: ${match['2. name']}`)
       );
-      cache.current[value] = suggestionsToDisplay;
+      cachedSuggestions.push({ key: value, suggestions: suggestionsToDisplay });
+      saveCacheToLocalStorage('suggestionsCache', cachedSuggestions);
       setSuggestions(suggestionsToDisplay);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
@@ -52,7 +57,7 @@ const AutocompleteInput = () => {
     setInputValue(suggestion);
     setSuggestions([]);
   };
-  console.log(cache.current)
+
   return (
     <div className="relative w-10/12 md:w-4/12">
       <input
