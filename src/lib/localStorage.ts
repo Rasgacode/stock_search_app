@@ -1,6 +1,8 @@
+import { Suggestion } from "@/components/AutocompleteInput";
+
 interface Suggestions {
   key: string;
-  suggestions: string[];
+  suggestions: Suggestion[];
 }
 
 export const saveCacheToLocalStorage = (data: Suggestions[]) => {

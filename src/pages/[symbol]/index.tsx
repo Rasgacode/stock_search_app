@@ -66,7 +66,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   if (symbol) {
     const response = await alphaVantageAxiosGet(`/query?function=GLOBAL_QUOTE&symbol=${symbol}`);
-    //TODO: remove mocked quote here
+    //TODO: remove mocked quote from here
     const data = response['Global Quote'] || {
       '01. symbol': 'IBM',
       '02. open': '216.8000',

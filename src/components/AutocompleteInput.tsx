@@ -1,16 +1,23 @@
 import React, { useRef, useState } from 'react';
 import { alphaVantageAxiosGet } from "@/lib/alphaVantageAxios";
 import { getCacheFromLocalStorage, saveCacheToLocalStorage } from "@/lib/localStorage";
+import { useRouter } from 'next/router';
 
 interface StockMatch {
   ['1. symbol']: string;
   ['2. name']: string;
 }
 
+export interface Suggestion {
+  symbol: string;
+  company: string;
+}
+
 const AutocompleteInput = () => {
   const [inputValue, setInputValue] = useState<string>('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
 
   const fetchSuggestions = async (value: string) => {
     if (!value) {
@@ -29,12 +36,12 @@ const AutocompleteInput = () => {
 
     try {
       const response = await alphaVantageAxiosGet(`/query?function=SYMBOL_SEARCH&keywords=${value}`);
-      const suggestionsToDisplay = response?.bestMatches?.map(
-        (match: StockMatch) => (`symbol: ${match['1. symbol']} - company: ${match['2. name']}`)
+      const suggestionsToShow = response?.bestMatches?.map(
+        (match: StockMatch) => ({ symbol: match['1. symbol'], company: match['2. name'] })
       );
-      cachedSuggestions.push({ key: value, suggestions: suggestionsToDisplay });
+      cachedSuggestions.push({ key: value, suggestions: suggestionsToShow });
       saveCacheToLocalStorage(cachedSuggestions);
-      setSuggestions(suggestionsToDisplay);
+      setSuggestions(suggestionsToShow);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
     }
@@ -54,8 +61,7 @@ const AutocompleteInput = () => {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
-    setSuggestions([]);
+    router.push(`/${suggestion}`);
   };
 
   return (
@@ -72,10 +78,10 @@ const AutocompleteInput = () => {
           {suggestions.map((suggestion, index) => (
             <li
               key={index}
-              onClick={() => handleSuggestionClick(suggestion)}
+              onClick={() => handleSuggestionClick(suggestion.symbol)}
               className="p-2 hover:bg-gray-200 cursor-pointer"
             >
-              {suggestion}
+              {`symbol: ${suggestion.symbol} - company: ${suggestion.company}`}
             </li>
           ))}
         </ul>
