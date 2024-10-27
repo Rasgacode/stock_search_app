@@ -34,10 +34,10 @@ const Details = ({ symbol, stockDetails, historicalData }: StockDetailsProps) =>
   };
 
   const fetchPriceHistory = async () => {
-    console.log('here')
     setLoading(true);
     try {
-      const timeSeries = historicalData;
+      const response = await alphaVantageAxiosGet(`/query?function=TIME_SERIES_DAILY&symbol=${symbol}`);
+      const timeSeries = response['Time Series (Daily)'];
       const fetchedPriceHistory = timeSeries
         ? Object.keys(timeSeries).map(date => ({
           date,

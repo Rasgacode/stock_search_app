@@ -36,6 +36,7 @@ const AutocompleteInput = () => {
 
     try {
       const response = await alphaVantageAxiosGet(`/query?function=SYMBOL_SEARCH&keywords=${value}`);
+      console.log('response:', response);
       const suggestionsToShow = response?.bestMatches?.map(
         (match: StockMatch) => ({ symbol: match['1. symbol'], company: match['2. name'] })
       );
