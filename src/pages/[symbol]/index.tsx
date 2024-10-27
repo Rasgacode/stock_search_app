@@ -1,16 +1,20 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from "next";
 import { alphaVantageAxiosGet } from "@/lib/alphaVantageAxios";
 import { saveFavouritesToLocalStorage, getFavouritesFromLocalStorage } from "@/lib/localStorage";
+import StockChart from '@/components/StockChart';
 
 interface StockDetailsProps {
   symbol: string;
   stockDetails: { label: string; value: string }[];
+  historicalData: { [key: string]: { [key: string]: string } };
 }
 
-const Details = ({ symbol, stockDetails }: StockDetailsProps) => {
+const Details = ({ symbol, stockDetails, historicalData }: StockDetailsProps) => {
   const [favourites, setFavourites] = useState<string[]>([]);
+  const [priceHistory, setPriceHistory] = useState<{ date: string; close: number }[]>([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleFavouriteToggle = () => {
@@ -27,6 +31,25 @@ const Details = ({ symbol, stockDetails }: StockDetailsProps) => {
 
   const handleBackClick = () => {
     router.push('/');
+  };
+
+  const fetchPriceHistory = async () => {
+    console.log('here')
+    setLoading(true);
+    try {
+      const timeSeries = historicalData;
+      const fetchedPriceHistory = timeSeries
+        ? Object.keys(timeSeries).map(date => ({
+          date,
+          close: parseFloat(timeSeries[date]['4. close']),
+        })).reverse()
+        : [];
+      setPriceHistory(fetchedPriceHistory);
+    } catch (error) {
+      console.error('Error fetching price history:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -50,12 +73,22 @@ const Details = ({ symbol, stockDetails }: StockDetailsProps) => {
           </div>
         ))}
       </div>
-      <button
-        onClick={handleFavouriteToggle}
-        className={`mt-4 p-2 rounded-md ${favourites.includes(symbol) ? 'bg-red-500' : 'bg-green-500'} text-white`}
-      >
-        {favourites.includes(symbol) ? 'Remove from favourites' : 'Add to favourites'}
-      </button>
+      <div className="flex space-x-4 mt-4">
+        <button
+          onClick={fetchPriceHistory}
+          className="p-2 rounded-md bg-blue-500 text-white"
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : 'Load Price History'}
+        </button>
+        <button
+          onClick={handleFavouriteToggle}
+          className={`p-2 rounded-md ${favourites.includes(symbol) ? 'bg-red-500' : 'bg-green-500'} text-white`}
+        >
+          {favourites.includes(symbol) ? 'Remove from favourites' : 'Add to favourites'}
+        </button>
+      </div>
+      {priceHistory.length > 0 && <StockChart priceHistory={priceHistory} />}
     </div>
   );
 };
@@ -66,19 +99,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   if (symbol) {
     const response = await alphaVantageAxiosGet(`/query?function=GLOBAL_QUOTE&symbol=${symbol}`);
-    //TODO: remove mocked quote from here
-    const data = response['Global Quote'] || {
-      '01. symbol': 'IBM',
-      '02. open': '216.8000',
-      '03. high': '218.6500',
-      '04. low': '214.3850',
-      '05. price': '214.6700',
-      '06. volume': '8482235',
-      '07. latest trading day': '2024-10-25',
-      '08. previous close': '218.3900',
-      '09. change': '-3.7200',
-      '10. change percent': '-1.7034%'
-    };
+    const data = response['Global Quote']
 
     if (!data) {
       return {
