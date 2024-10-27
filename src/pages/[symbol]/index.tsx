@@ -1,6 +1,8 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
+import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from "next";
 import { alphaVantageAxiosGet } from "@/lib/alphaVantageAxios";
+import { saveFavouritesToLocalStorage, getFavouritesFromLocalStorage } from "@/lib/localStorage";
 
 interface StockDetailsProps {
   symbol: string;
@@ -8,8 +10,37 @@ interface StockDetailsProps {
 }
 
 const Details = ({ symbol, stockDetails }: StockDetailsProps) => {
+  const [favourites, setFavourites] = useState<string[]>([]);
+  const router = useRouter();
+
+  const handleFavouriteToggle = () => {
+    if (favourites.includes(symbol)) {
+      const updatedFavourites = favourites.filter((fav: string) => fav !== symbol);
+      saveFavouritesToLocalStorage(updatedFavourites);
+      setFavourites(updatedFavourites)
+    } else {
+      const updatedFavourites = [...favourites, symbol]
+      saveFavouritesToLocalStorage(updatedFavourites);
+      setFavourites(updatedFavourites)
+    }
+  };
+
+  const handleBackClick = () => {
+    router.push('/');
+  };
+
+  useEffect(() => {
+    setFavourites(getFavouritesFromLocalStorage() || [])
+  }, []);
+
   return (
     <div className="flex flex-col items-center p-4">
+      <button
+        onClick={handleBackClick}
+        className="fixed top-4 left-4 p-2 rounded-md bg-blue-500 text-white"
+      >
+        Search
+      </button>
       <h1 className="text-3xl font-bold mb-4">{symbol}</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl">
         {stockDetails?.map((detail, index) => (
@@ -19,12 +50,18 @@ const Details = ({ symbol, stockDetails }: StockDetailsProps) => {
           </div>
         ))}
       </div>
+      <button
+        onClick={handleFavouriteToggle}
+        className={`mt-4 p-2 rounded-md ${favourites.includes(symbol) ? 'bg-red-500' : 'bg-green-500'} text-white`}
+      >
+        {favourites.includes(symbol) ? 'Remove from favourites' : 'Add to favourites'}
+      </button>
     </div>
   );
 };
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  const { params } = context;
+  const {params} = context;
   const symbol = params?.symbol;
 
   if (symbol) {

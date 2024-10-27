@@ -18,7 +18,7 @@ const AutocompleteInput = () => {
       return;
     }
 
-    const cachedSuggestions = getCacheFromLocalStorage('suggestionsCache') || [];
+    const cachedSuggestions = getCacheFromLocalStorage() || [];
     if (cachedSuggestions.length) {
       const selectedSuggestions = cachedSuggestions.find((suggestion) => suggestion.key === value);
       if (selectedSuggestions) {
@@ -33,7 +33,7 @@ const AutocompleteInput = () => {
         (match: StockMatch) => (`symbol: ${match['1. symbol']} - company: ${match['2. name']}`)
       );
       cachedSuggestions.push({ key: value, suggestions: suggestionsToDisplay });
-      saveCacheToLocalStorage('suggestionsCache', cachedSuggestions);
+      saveCacheToLocalStorage(cachedSuggestions);
       setSuggestions(suggestionsToDisplay);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
